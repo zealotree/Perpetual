@@ -42,8 +42,7 @@ static int32_t get_angle_for_day(int day) {
 
 
 static void draw_clock(Layer *layer, GContext *ctx) {
-  //time_t temp = time(NULL);
-  time_t temp = 1461738634;
+  time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
 
   // Set Layout Boundaries
@@ -172,6 +171,7 @@ static void draw_clock(Layer *layer, GContext *ctx) {
 
 
 static void draw_date_dots(Layer *layer, GContext *ctx) {
+
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
 
