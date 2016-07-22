@@ -1,0 +1,25 @@
+{
+  "name": "Perpetual",
+  "author": "Zealotree",
+  "version": "1.0.0",
+  "keywords": ["pebble-app"],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "displayName": "Perpetual",
+    "uuid": "48e3dd66-1f18-4a63-8957-8b21a9d8d86d",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "chalk"
+    ],
+    "watchapp": {
+      "watchface": true
+    },
+    "messageKeys": [
+    ],
+    "resources": {
+      "media": []
+    }
+  }
+}
