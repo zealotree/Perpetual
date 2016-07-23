@@ -21,6 +21,7 @@ typedef struct {
   GColor RingColor;
   GColor HourHandColor;
   GColor MinuteHandColor;
+  GColor MonthDotColor;
 } Theme;
 
 Theme theme;
@@ -37,6 +38,7 @@ static void load_default_theme() {
   theme.CurrentWeekDayColor = GColorChromeYellow;
   theme.HourHandColor = GColorChromeYellow;
   theme.MinuteHandColor = GColorWhite;
+  theme.MonthDotColor = GColorChromeYellow;
 }
 
 // Persistent
@@ -193,7 +195,7 @@ static void draw_clock(Layer *layer, GContext *ctx) {
       GOvalScaleModeFillCircle,
       month_angle
   );
-  graphics_context_set_fill_color(ctx, GColorChromeYellow);
+  graphics_context_set_fill_color(ctx, theme.MonthDotColor);
   graphics_fill_circle(ctx, h3, 3);
 
   
@@ -368,6 +370,13 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   if (wd_color_t) {
     theme.MinuteHandColor = GColorFromHEX(mh_color_t->value->int32);
   }
+
+  // Month DOt Color
+  Tuple *md_color_t = dict_find(iter, MESSAGE_KEY_MonthDotColor);
+  if (md_color_t) {
+    theme.MonthDotColor = GColorFromHEX(md_color_t->value->int32);
+  }
+
 
 
   save_settings();
