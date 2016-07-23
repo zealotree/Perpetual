@@ -170,7 +170,7 @@ static void draw_clock(Layer *layer, GContext *ctx) {
       if (tick_time->tm_wday == i) {
         graphics_context_set_fill_color(ctx, theme.CurrentWeekDayColor);
       } else {
-        graphics_context_set_fill_color(ctx, theme.DateDotColor);
+        graphics_context_set_fill_color(ctx, theme.WeekDayColor);
       }
       graphics_fill_circle(ctx, d1, 3);
     }
