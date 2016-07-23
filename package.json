@@ -35,7 +35,9 @@
       "WeekDayColor",
       "HourHandColor",
       "MinuteHandColor",
-      "MonthDotColor"
+      "MonthDotColor",
+      "CenterDotColor",
+      "CenterKnobColor"
     ],
     "resources": {
       "media": [

@@ -22,6 +22,8 @@ typedef struct {
   GColor HourHandColor;
   GColor MinuteHandColor;
   GColor MonthDotColor;
+  GColor CenterKnobColor;
+  GColor CenterDotColor;
 } Theme;
 
 Theme theme;
@@ -39,6 +41,8 @@ static void load_default_theme() {
   theme.HourHandColor = GColorChromeYellow;
   theme.MinuteHandColor = GColorWhite;
   theme.MonthDotColor = GColorChromeYellow;
+  theme.CenterKnobColor = GColorWhite;
+  theme.CenterDotColor = GColorLightGray;
 }
 
 // Persistent
@@ -178,7 +182,7 @@ static void draw_clock(Layer *layer, GContext *ctx) {
   graphics_draw_circle(ctx, center, DIAL_RADIUS);
   
   // Draw Center Circle
-  graphics_context_set_fill_color(ctx, GColorWhite);
+  graphics_context_set_fill_color(ctx, theme.CenterKnobColor);
   graphics_fill_circle(ctx, center, CONNECTOR_RADIUS);
 
 
@@ -226,7 +230,7 @@ static void draw_clock(Layer *layer, GContext *ctx) {
 
   
   // Draw Center Circle Dot
-  graphics_context_set_fill_color(ctx, GColorLightGray);
+  graphics_context_set_fill_color(ctx, theme.CenterDotColor);
   graphics_fill_circle(ctx, center, 4);
 
 
@@ -375,6 +379,18 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   Tuple *md_color_t = dict_find(iter, MESSAGE_KEY_MonthDotColor);
   if (md_color_t) {
     theme.MonthDotColor = GColorFromHEX(md_color_t->value->int32);
+  }
+
+  // Center Dot
+  Tuple *cd_color_t = dict_find(iter, MESSAGE_KEY_CenterDotColor);
+  if (cd_color_t) {
+    theme.CenterDotColor = GColorFromHEX(cd_color_t->value->int32);
+  }
+
+  // Center Knob Color
+  Tuple *ck_color_t = dict_find(iter, MESSAGE_KEY_CenterKnobColor);
+  if (ck_color_t) {
+    theme.CenterKnobColor = GColorFromHEX(ck_color_t->value->int32);
   }
 
 

@@ -91,6 +91,18 @@ module.exports = [
       "messageKey": "MinuteHandColor",
       "defaultValue": "0xFFFFFF",
       "label": "Minute Hand",
+    },
+    {
+      "type": "color",
+      "messageKey": "CenterKnobColor",
+      "defaultValue": "0xFFFFFF",
+      "label": "Center Knob",
+    },
+    {
+      "type": "color",
+      "messageKey": "CenterDotColor",
+      "defaultValue": "0xAAAAAA",
+      "label": "Center Dot",
     }
   ]
 },
