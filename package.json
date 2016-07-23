@@ -1,7 +1,7 @@
 {
   "name": "Perpetual",
   "author": "Zealotree",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "keywords": [
     "pebble-app"
   ],
@@ -23,7 +23,18 @@
     },
     "messageKeys": [
       "Show_DoW",
-      "Show_Texture"
+      "Show_Texture",
+      "BackgroundColor",
+      "CurrentDateDotColor",
+      "DateDotColor",
+      "AMDotColor",
+      "PMDotColor",
+      "MarkerColor",
+      "RingColor",
+      "CurrentWeekDayColor",
+      "WeekDayColor",
+      "HourHandColor",
+      "MinuteHandColor"
     ],
     "resources": {
       "media": [

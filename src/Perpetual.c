@@ -9,9 +9,41 @@ typedef struct {
   int minutes;
 } Time;    
 
+typedef struct {
+  GColor BackgroundColor;
+  GColor DateDotColor;
+  GColor CurrentDateDotColor;
+  GColor WeekDayColor;
+  GColor CurrentWeekDayColor;
+  GColor AMDotColor;
+  GColor PMDotColor;
+  GColor MarkerColor;
+  GColor RingColor;
+  GColor HourHandColor;
+  GColor MinuteHandColor;
+} Theme;
+
+Theme theme;
+
+static void load_default_theme() {
+  theme.BackgroundColor = GColorDarkGray;
+  theme.DateDotColor = GColorBlack;
+  theme.CurrentDateDotColor = GColorChromeYellow;
+  theme.AMDotColor = GColorWhite;
+  theme.PMDotColor = GColorBlack;
+  theme.MarkerColor = GColorLightGray;
+  theme.RingColor = GColorLightGray;
+  theme.WeekDayColor = GColorBlack;
+  theme.CurrentWeekDayColor = GColorChromeYellow;
+  theme.HourHandColor = GColorChromeYellow;
+  theme.MinuteHandColor = GColorWhite;
+}
+
 // Persistent
 #define SHOW_TEXTURE 222 // Use texture
 #define SHOW_DAY_OF_WEEK 223 // Show Day of Week
+#define THEME 224 
+
 
   
 // Layout boundaries
@@ -49,6 +81,24 @@ static int32_t get_angle_for_day(int day) {
 }
 
 
+static void update_display() {
+  layer_mark_dirty(clock_layer);
+  layer_mark_dirty(date_dots);
+}
+
+static void load_settings() {
+  load_default_theme();
+  persist_read_data(THEME, &theme, sizeof(theme));
+}
+
+static void save_settings() {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Saving settings");
+  persist_write_data(THEME, &theme, sizeof(theme));
+  update_display();
+}
+
+
+
 static void draw_clock(Layer *layer, GContext *ctx) {
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
@@ -64,9 +114,9 @@ static void draw_clock(Layer *layer, GContext *ctx) {
 
   // Draw the AM/PM indicator
   if (tick_time->tm_hour > 11) { // 00:00 - 11:59
-    graphics_context_set_fill_color(ctx, GColorBlack);
+    graphics_context_set_fill_color(ctx, theme.PMDotColor);
   } else {
-    graphics_context_set_fill_color(ctx, GColorWhite);
+    graphics_context_set_fill_color(ctx, theme.AMDotColor);
   }
   const GPoint ap_dot = gpoint_from_polar(
     ap_ring,
@@ -76,9 +126,9 @@ static void draw_clock(Layer *layer, GContext *ctx) {
   graphics_fill_circle(ctx, ap_dot, 3);
   
   if (persist_exists(SHOW_TEXTURE) && persist_read_bool(SHOW_TEXTURE)) {
-    graphics_context_set_stroke_color(ctx, GColorDarkGray);  
+    graphics_context_set_stroke_color(ctx, theme.MarkerColor);  
   } else {
-    graphics_context_set_stroke_color(ctx, GColorLightGray);  
+    graphics_context_set_stroke_color(ctx, theme.MarkerColor);  
   }
   // Draw the Markers
   for(int i = 0; i < 7; i++) {
@@ -112,9 +162,9 @@ static void draw_clock(Layer *layer, GContext *ctx) {
           DEG_TO_TRIGANGLE(dow_angle+(20*i))
       );
       if (tick_time->tm_wday == i) {
-        graphics_context_set_fill_color(ctx, GColorRed);
+        graphics_context_set_fill_color(ctx, theme.CurrentWeekDayColor);
       } else {
-        graphics_context_set_fill_color(ctx, GColorBlack);
+        graphics_context_set_fill_color(ctx, theme.DateDotColor);
       }
       graphics_fill_circle(ctx, d1, 3);
     }
@@ -122,7 +172,7 @@ static void draw_clock(Layer *layer, GContext *ctx) {
   
   // Draw the Center Dial
   graphics_context_set_stroke_width(ctx, DIAL_STROKE);
-  graphics_context_set_fill_color(ctx, GColorBrass);
+  graphics_context_set_stroke_color(ctx, theme.RingColor);
   graphics_draw_circle(ctx, center, DIAL_RADIUS);
   
   // Draw Center Circle
@@ -143,7 +193,7 @@ static void draw_clock(Layer *layer, GContext *ctx) {
       GOvalScaleModeFillCircle,
       month_angle
   );
-  graphics_context_set_fill_color(ctx, GColorRed);
+  graphics_context_set_fill_color(ctx, GColorChromeYellow);
   graphics_fill_circle(ctx, h3, 3);
 
   
@@ -166,10 +216,10 @@ static void draw_clock(Layer *layer, GContext *ctx) {
   };
   
   graphics_context_set_stroke_width(ctx, 6);
-  graphics_context_set_stroke_color(ctx, GColorWhite);
+  graphics_context_set_stroke_color(ctx, theme.MinuteHandColor);
   graphics_draw_line(ctx, center, minute_hand);
 
-  graphics_context_set_stroke_color(ctx, GColorRed);
+  graphics_context_set_stroke_color(ctx, theme.HourHandColor);
   graphics_draw_line(ctx, center, hour_hand);
 
   
@@ -183,12 +233,18 @@ static void draw_clock(Layer *layer, GContext *ctx) {
 
 static void draw_date_dots(Layer *layer, GContext *ctx) {
 
+
+
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
 
   GRect bounds = layer_get_bounds(layer);
   GRect month_ring = grect_inset(bounds, GEdgeInsets(MONTH_RING));
   GRect ring31 = grect_inset(bounds, GEdgeInsets(RING_31));  
+
+  // Background Color
+  graphics_context_set_fill_color(ctx, theme.BackgroundColor);
+  graphics_fill_rect(ctx, bounds, 0, GCornersAll);
 
   // Draw the Texture
   if (persist_exists(SHOW_TEXTURE) && persist_read_bool(SHOW_TEXTURE)) {
@@ -207,9 +263,9 @@ static void draw_date_dots(Layer *layer, GContext *ctx) {
 
       GPoint fill_in = grect_center_point(&fill_square);
       if (tick_time->tm_mday == 31) {
-        graphics_context_set_fill_color(ctx, GColorRed);
+        graphics_context_set_fill_color(ctx, theme.CurrentDateDotColor);
       } else {
-        graphics_context_set_fill_color(ctx, GColorBlack);
+        graphics_context_set_fill_color(ctx, theme.DateDotColor);
       }
       graphics_fill_circle(ctx, fill_in, MONTH_DOT_RADIUS);
 
@@ -218,9 +274,9 @@ static void draw_date_dots(Layer *layer, GContext *ctx) {
 
       GPoint fill_in = grect_center_point(&fill_square);
       if (tick_time->tm_mday == i) {
-        graphics_context_set_fill_color(ctx, GColorRed);
+        graphics_context_set_fill_color(ctx, theme.CurrentDateDotColor);
       } else {
-        graphics_context_set_fill_color(ctx, GColorBlack);
+        graphics_context_set_fill_color(ctx, theme.DateDotColor);
       }
       graphics_fill_circle(ctx, fill_in, MONTH_DOT_RADIUS);
     }
@@ -233,26 +289,96 @@ static void draw_date_dots(Layer *layer, GContext *ctx) {
 
 static void inbox_received_handler(DictionaryIterator *iter, void *context) {
 
+
+  // Texture
   Tuple *st_t = dict_find(iter, MESSAGE_KEY_Show_Texture);
   if (st_t) {
     persist_write_int(SHOW_TEXTURE, st_t->value->int32 == 1);
-    layer_mark_dirty(date_dots);
   }
 
+  // Day of Week
   Tuple *sd_t = dict_find(iter, MESSAGE_KEY_Show_DoW);
   if (sd_t) {
     persist_write_int(SHOW_DAY_OF_WEEK, sd_t->value->int32 == 1);
-    layer_mark_dirty(clock_layer);
   }
+
+  // Background Color
+  Tuple *bg_color_t = dict_find(iter, MESSAGE_KEY_BackgroundColor);
+  if (bg_color_t) {
+    theme.BackgroundColor = GColorFromHEX(bg_color_t->value->int32);
+  }
+
+  // Date Dot
+  Tuple *dd_color_t = dict_find(iter, MESSAGE_KEY_DateDotColor);
+  if (dd_color_t) {
+    theme.DateDotColor = GColorFromHEX(dd_color_t->value->int32);
+  }
+
+  // Current Date Dot
+  Tuple *cdd_color_t = dict_find(iter, MESSAGE_KEY_CurrentDateDotColor);
+  if (cdd_color_t) {
+    theme.CurrentDateDotColor = GColorFromHEX(cdd_color_t->value->int32);
+  }
+
+  // AM Dot
+  Tuple *add_color_t = dict_find(iter, MESSAGE_KEY_AMDotColor);
+  if (add_color_t) {
+    theme.AMDotColor = GColorFromHEX(add_color_t->value->int32);
+  }
+
+  // PM Dot
+  Tuple *pdd_color_t = dict_find(iter, MESSAGE_KEY_PMDotColor);
+  if (pdd_color_t) {
+    theme.PMDotColor = GColorFromHEX(pdd_color_t->value->int32);
+  }
+
+  // Marker Color
+  Tuple *m_color_t = dict_find(iter, MESSAGE_KEY_MarkerColor);
+  if (m_color_t) {
+    theme.MarkerColor = GColorFromHEX(m_color_t->value->int32);
+  }
+
+  // Ring Color
+  Tuple *r_color_t = dict_find(iter, MESSAGE_KEY_RingColor);
+  if (r_color_t) {
+    theme.RingColor = GColorFromHEX(r_color_t->value->int32);
+  }
+
+  // Current Week Day Color
+  Tuple *cwd_color_t = dict_find(iter, MESSAGE_KEY_CurrentWeekDayColor);
+  if (cwd_color_t) {
+    theme.CurrentWeekDayColor = GColorFromHEX(cwd_color_t->value->int32);
+  }
+
+  // Week Day Color
+  Tuple *wd_color_t = dict_find(iter, MESSAGE_KEY_WeekDayColor);
+  if (wd_color_t) {
+    theme.WeekDayColor = GColorFromHEX(wd_color_t->value->int32);
+  }
+
+  // Hour Hand Color
+  Tuple *hh_color_t = dict_find(iter, MESSAGE_KEY_HourHandColor);
+  if (hh_color_t) {
+    theme.HourHandColor = GColorFromHEX(hh_color_t->value->int32);
+  }
+
+
+  // Minute Hand Color
+  Tuple *mh_color_t = dict_find(iter, MESSAGE_KEY_MinuteHandColor);
+  if (wd_color_t) {
+    theme.MinuteHandColor = GColorFromHEX(mh_color_t->value->int32);
+  }
+
+
+  save_settings();
 
 }
 
 static void main_window_load() {
-
+  window_set_background_color(my_window, theme.BackgroundColor);
   app_message_register_inbox_received(inbox_received_handler);
   app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
 
-  window_set_background_color(my_window, GColorDarkGray);
   Layer *window_layer = window_get_root_layer(my_window);
   GRect bounds = layer_get_bounds(window_layer);
   date_dots = layer_create(bounds);
@@ -291,6 +417,7 @@ static void app_connection_handler(bool connected) {
 }
 
 void handle_init(void) {
+  load_settings();
   my_window = window_create();
   window_set_window_handlers(my_window, (WindowHandlers) {
     .load = main_window_load,
