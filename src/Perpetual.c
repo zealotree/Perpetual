@@ -9,6 +9,11 @@ typedef struct {
   int minutes;
 } Time;    
 
+// Persistent
+#define SHOW_TEXTURE 222 // Use texture
+#define SHOW_DAY_OF_WEEK 223 // Show Day of Week
+
+  
 // Layout boundaries
 #define HOUR_RING PBL_IF_ROUND_ELSE(50, 50) // HOUR HAND
 #define MIN_RING PBL_IF_ROUND_ELSE(32, 32) // MIN HAND
@@ -70,7 +75,11 @@ static void draw_clock(Layer *layer, GContext *ctx) {
   );
   graphics_fill_circle(ctx, ap_dot, 3);
   
-  graphics_context_set_stroke_color(ctx, GColorDarkGray);  
+  if (persist_exists(SHOW_TEXTURE) && persist_read_bool(SHOW_TEXTURE)) {
+    graphics_context_set_stroke_color(ctx, GColorDarkGray);  
+  } else {
+    graphics_context_set_stroke_color(ctx, GColorLightGray);  
+  }
   // Draw the Markers
   for(int i = 0; i < 7; i++) {
     
@@ -92,20 +101,23 @@ static void draw_clock(Layer *layer, GContext *ctx) {
     graphics_draw_line(ctx, marker1a, marker1);
 
 
-    // Day of the Week
-    // i = 0 Sunday
-    int dow_angle = 120;
-    const GPoint d1 = gpoint_from_polar(
-        dow_ring,
-        GOvalScaleModeFillCircle,
-        DEG_TO_TRIGANGLE(dow_angle+(20*i))
-    );
-    if (tick_time->tm_wday == i) {
-      graphics_context_set_fill_color(ctx, GColorRed);
-    } else {
-      graphics_context_set_fill_color(ctx, GColorBlack);
+
+    if (persist_exists(SHOW_DAY_OF_WEEK) && persist_read_bool(SHOW_DAY_OF_WEEK)) {
+      // Day of the Week
+      // i = 0 Sunday
+      int dow_angle = 120;
+      const GPoint d1 = gpoint_from_polar(
+          dow_ring,
+          GOvalScaleModeFillCircle,
+          DEG_TO_TRIGANGLE(dow_angle+(20*i))
+      );
+      if (tick_time->tm_wday == i) {
+        graphics_context_set_fill_color(ctx, GColorRed);
+      } else {
+        graphics_context_set_fill_color(ctx, GColorBlack);
+      }
+      graphics_fill_circle(ctx, d1, 3);
     }
-    graphics_fill_circle(ctx, d1, 3);
   }
   
   // Draw the Center Dial
@@ -179,8 +191,11 @@ static void draw_date_dots(Layer *layer, GContext *ctx) {
   GRect ring31 = grect_inset(bounds, GEdgeInsets(RING_31));  
 
   // Draw the Texture
-  graphics_context_set_compositing_mode(ctx, GCompOpSet);
-  graphics_draw_bitmap_in_rect(ctx, texture, bounds);
+  if (persist_exists(SHOW_TEXTURE) && persist_read_bool(SHOW_TEXTURE)) {
+    graphics_context_set_compositing_mode(ctx, GCompOpSet);
+    graphics_draw_bitmap_in_rect(ctx, texture, bounds);
+  }
+
   
   for(int i = 0; i < 32; i++) {
     int day_angle = DEG_TO_TRIGANGLE(get_angle_for_day(i));
@@ -215,7 +230,28 @@ static void draw_date_dots(Layer *layer, GContext *ctx) {
 
 }
 
+
+static void inbox_received_handler(DictionaryIterator *iter, void *context) {
+
+  Tuple *st_t = dict_find(iter, MESSAGE_KEY_Show_Texture);
+  if (st_t) {
+    persist_write_int(SHOW_TEXTURE, st_t->value->int32 == 1);
+    layer_mark_dirty(date_dots);
+  }
+
+  Tuple *sd_t = dict_find(iter, MESSAGE_KEY_Show_DoW);
+  if (sd_t) {
+    persist_write_int(SHOW_DAY_OF_WEEK, sd_t->value->int32 == 1);
+    layer_mark_dirty(clock_layer);
+  }
+
+}
+
 static void main_window_load() {
+
+  app_message_register_inbox_received(inbox_received_handler);
+  app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+
   window_set_background_color(my_window, GColorDarkGray);
   Layer *window_layer = window_get_root_layer(my_window);
   GRect bounds = layer_get_bounds(window_layer);
