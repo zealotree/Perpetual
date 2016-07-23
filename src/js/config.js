@@ -79,7 +79,7 @@ module.exports = [
       "messageKey": "MonthDotColor",
       "defaultValue": "0xFFAA00",
       "label": "Current Month Dot",
-    }
+    },
     {
       "type": "color",
       "messageKey": "HourHandColor",
