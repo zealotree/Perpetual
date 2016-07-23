@@ -1,10 +1,14 @@
 {
   "name": "Perpetual",
   "author": "Zealotree",
-  "version": "1.3.0",
-  "keywords": ["pebble-app"],
+  "version": "1.5.0",
+  "keywords": [
+    "pebble-app"
+  ],
   "private": true,
-  "dependencies": {},
+  "dependencies": {
+    "pebble-clay": "^1.0.2"
+  },
   "pebble": {
     "displayName": "Perpetual",
     "uuid": "48e3dd66-1f18-4a63-8957-8b21a9d8d86d",
@@ -18,6 +22,8 @@
       "watchface": true
     },
     "messageKeys": [
+      "Show_DoW",
+      "Show_Texture"
     ],
     "resources": {
       "media": [
