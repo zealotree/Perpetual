@@ -14,15 +14,17 @@ typedef struct {
 #define MONTH_RING PBL_IF_ROUND_ELSE(14, 5) 
 #define MONTH_DOT_RADIUS PBL_IF_ROUND_ELSE(4, 4)
 #define RING_31 PBL_IF_ROUND_ELSE(27, 16) // 31st DOT
-#define MON_RING PBL_IF_ROUND_ELSE(68, 68) 
+#define MON_RING PBL_IF_ROUND_ELSE(72, 68) 
 #define MON_DOT_INSET PBL_IF_ROUND_ELSE(34, 30) 
 #define DOW_RING PBL_IF_ROUND_ELSE(27, 27) 
 #define AP_RING PBL_IF_ROUND_ELSE(52, 50) 
-#define MARKER_RING PBL_IF_ROUND_ELSE(37, 37) 
+#define MARKER_RING PBL_IF_ROUND_ELSE(42, 43) 
 #define MARKER_RING_INSET PBL_IF_ROUND_ELSE(21, 16) 
 #define CONNECTOR_RADIUS PBL_IF_ROUND_ELSE(9, 8) 
 #define DIAL_STROKE PBL_IF_ROUND_ELSE(2, 3) 
-#define DIAL_RADIUS PBL_IF_ROUND_ELSE(24, 22) 
+#define DIAL_RADIUS PBL_IF_ROUND_ELSE(24, 22)
+#define HOUR_HAND_LENGTH PBL_IF_ROUND_ELSE(42, 36)
+#define MIN_HAND_LENGTH PBL_IF_ROUND_ELSE(54, 50)
 
 static Time s_last_time;
 
@@ -47,15 +49,11 @@ static void draw_clock(Layer *layer, GContext *ctx) {
 
   // Set Layout Boundaries
   GRect bounds = layer_get_bounds(layer);
-  GRect hour_ring = grect_inset(bounds, GEdgeInsets(HOUR_RING));
-  GRect min_ring = grect_inset(bounds, GEdgeInsets(MIN_RING));  
   GRect mon_ring = grect_inset(bounds, GEdgeInsets(MON_RING));
   GRect dow_ring = grect_inset(bounds, GEdgeInsets(DOW_RING));
   GRect ap_ring = grect_inset(bounds, GEdgeInsets(AP_RING));
   GRect marker_ring = grect_inset(bounds, GEdgeInsets(MARKER_RING));
   GRect marker_inset_ring = grect_inset(marker_ring, GEdgeInsets(MARKER_RING_INSET));  
-  GRect inset_ring = grect_inset(marker_ring, GEdgeInsets(26));
-  GRect mon_ring_r = grect_inset(marker_ring, GEdgeInsets(MON_DOT_INSET));
   GPoint center = grect_center_point(&marker_inset_ring);
 
   // Draw the AM/PM indicator
@@ -91,7 +89,7 @@ static void draw_clock(Layer *layer, GContext *ctx) {
       DEG_TO_TRIGANGLE(angle*i)
     );
 
-    graphics_context_set_stroke_width(ctx, 4);
+    graphics_context_set_stroke_width(ctx, PBL_IF_ROUND_ELSE(4, 3));
     graphics_draw_line(ctx, marker1a, marker1);
 
 
@@ -104,7 +102,7 @@ static void draw_clock(Layer *layer, GContext *ctx) {
         DEG_TO_TRIGANGLE(dow_angle+(20*i))
     );
     if (tick_time->tm_wday == i) {
-      graphics_context_set_fill_color(ctx, GColorChromeYellow);
+      graphics_context_set_fill_color(ctx, GColorRed);
     } else {
       graphics_context_set_fill_color(ctx, GColorBlack);
     }
@@ -130,35 +128,40 @@ static void draw_clock(Layer *layer, GContext *ctx) {
   // Fill Current Month
   int month_angle = DEG_TO_TRIGANGLE(get_angle_for_hour(tick_time->tm_mon + 1));
   const GPoint h3 = gpoint_from_polar(
-      mon_ring_r,
+      mon_ring,
       GOvalScaleModeFillCircle,
       month_angle
   );
-  graphics_context_set_fill_color(ctx, GColorChromeYellow);
+  graphics_context_set_fill_color(ctx, GColorRed);
   graphics_fill_circle(ctx, h3, 3);
 
   
   // Draw Minute Hand
-  int minute_angle = DEG_TO_TRIGANGLE(get_angle_for_minute(s_last_time.minutes));
-  const GPoint h2 = gpoint_from_polar(
-      min_ring,
-      GOvalScaleModeFillCircle,
-      minute_angle
-  );
-  graphics_context_set_stroke_color(ctx, GColorWhite);
-  graphics_context_set_stroke_width(ctx, 6);
-  graphics_draw_line(ctx, center, h2);
+  int minute_angle = TRIG_MAX_ANGLE * s_last_time.minutes / 60;
   
   // Draw Hour Hand
-  int hour_angle = DEG_TO_TRIGANGLE(get_angle_for_hour(s_last_time.hours));
-  const GPoint h1 = gpoint_from_polar(
-      hour_ring,
-      GOvalScaleModeFillCircle,
-      hour_angle
-  );
-  graphics_context_set_stroke_color(ctx, GColorChromeYellow);
+  int hour_angle = TRIG_MAX_ANGLE * (tick_time->tm_hour * 5 + tick_time->tm_min / 12) / 60;
+//   hour_angle += (minute_angle / TRIG_MAX_ANGLE) * (TRIG_MAX_ANGLE / 12);
+
+
+  GPoint hour_hand = {
+    .x = (int16_t)(sin_lookup(hour_angle) * (int32_t) HOUR_HAND_LENGTH / TRIG_MAX_RATIO) + center.x,
+    .y = (int16_t)(-cos_lookup(hour_angle) * (int32_t) HOUR_HAND_LENGTH / TRIG_MAX_RATIO) + center.y,
+  };
+
+  GPoint minute_hand = {
+    .x = (int16_t)(sin_lookup(minute_angle) * (int32_t) MIN_HAND_LENGTH / TRIG_MAX_RATIO) + center.x,
+    .y = (int16_t)(-cos_lookup(minute_angle) * (int32_t) MIN_HAND_LENGTH / TRIG_MAX_RATIO) + center.y,
+  };
+  
   graphics_context_set_stroke_width(ctx, 6);
-  graphics_draw_line(ctx, center, h1);
+  graphics_context_set_stroke_color(ctx, GColorWhite);
+  graphics_draw_line(ctx, center, minute_hand);
+
+  graphics_context_set_stroke_color(ctx, GColorRed);
+  graphics_draw_line(ctx, center, hour_hand);
+
+
   
 
   
@@ -181,30 +184,26 @@ static void draw_date_dots(Layer *layer, GContext *ctx) {
   
   for(int i = 0; i < 32; i++) {
     int day_angle = DEG_TO_TRIGANGLE(get_angle_for_day(i));
-     GRect square;
-   GRect fill_square;
     
     if (i == 31) {
       int day_angle = DEG_TO_TRIGANGLE(get_angle_for_day(0));
-      GRect square = grect_centered_from_polar(ring31, GOvalScaleModeFitCircle, day_angle, GSize(12,12));
       GRect fill_square = grect_centered_from_polar(ring31, GOvalScaleModeFitCircle, day_angle, GSize(10,10));
 
 
       GPoint fill_in = grect_center_point(&fill_square);
       if (tick_time->tm_mday == 31) {
-        graphics_context_set_fill_color(ctx, GColorChromeYellow);
+        graphics_context_set_fill_color(ctx, GColorRed);
       } else {
         graphics_context_set_fill_color(ctx, GColorBlack);
       }
       graphics_fill_circle(ctx, fill_in, MONTH_DOT_RADIUS);
 
     } else {
-      GRect square = grect_centered_from_polar(month_ring, GOvalScaleModeFitCircle, day_angle, GSize(12,12));
       GRect fill_square = grect_centered_from_polar(month_ring, GOvalScaleModeFitCircle, day_angle, GSize(10,10));
 
       GPoint fill_in = grect_center_point(&fill_square);
       if (tick_time->tm_mday == i) {
-        graphics_context_set_fill_color(ctx, GColorChromeYellow);
+        graphics_context_set_fill_color(ctx, GColorRed);
       } else {
         graphics_context_set_fill_color(ctx, GColorBlack);
       }
