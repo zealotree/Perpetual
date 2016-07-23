@@ -20,7 +20,13 @@
     "messageKeys": [
     ],
     "resources": {
-      "media": []
+      "media": [
+        {
+          "type": "bitmap",
+          "name": "TEXTURE",
+          "file": "images/texture.png"
+        }
+      ]
     }
   }
 }

@@ -2,6 +2,7 @@
 Window *my_window;
 static Layer *date_dots;
 static Layer *clock_layer;
+static GBitmap *texture;
 
 typedef struct {
   int hours;
@@ -57,7 +58,7 @@ static void draw_clock(Layer *layer, GContext *ctx) {
   GPoint center = grect_center_point(&marker_inset_ring);
 
   // Draw the AM/PM indicator
-  if (tick_time->tm_hour > 12) {
+  if (tick_time->tm_hour > 11) { // 00:00 - 11:59
     graphics_context_set_fill_color(ctx, GColorBlack);
   } else {
     graphics_context_set_fill_color(ctx, GColorWhite);
@@ -69,9 +70,7 @@ static void draw_clock(Layer *layer, GContext *ctx) {
   );
   graphics_fill_circle(ctx, ap_dot, 3);
   
-  graphics_context_set_stroke_color(ctx, GColorLightGray);
-  
-  
+  graphics_context_set_stroke_color(ctx, GColorDarkGray);  
   // Draw the Markers
   for(int i = 0; i < 7; i++) {
     
@@ -161,9 +160,6 @@ static void draw_clock(Layer *layer, GContext *ctx) {
   graphics_context_set_stroke_color(ctx, GColorRed);
   graphics_draw_line(ctx, center, hour_hand);
 
-
-  
-
   
   // Draw Center Circle Dot
   graphics_context_set_fill_color(ctx, GColorLightGray);
@@ -181,6 +177,10 @@ static void draw_date_dots(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
   GRect month_ring = grect_inset(bounds, GEdgeInsets(MONTH_RING));
   GRect ring31 = grect_inset(bounds, GEdgeInsets(RING_31));  
+
+  // Draw the Texture
+  graphics_context_set_compositing_mode(ctx, GCompOpSet);
+  graphics_draw_bitmap_in_rect(ctx, texture, bounds);
   
   for(int i = 0; i < 32; i++) {
     int day_angle = DEG_TO_TRIGANGLE(get_angle_for_day(i));
@@ -221,6 +221,7 @@ static void main_window_load() {
   GRect bounds = layer_get_bounds(window_layer);
   date_dots = layer_create(bounds);
   clock_layer = layer_create(bounds);
+  texture = gbitmap_create_with_resource(RESOURCE_ID_TEXTURE);
   
   layer_set_update_proc(date_dots, draw_date_dots);
   layer_set_update_proc(clock_layer, draw_clock);
@@ -234,6 +235,7 @@ static void main_window_load() {
 static void main_window_unload() {
   layer_destroy(date_dots);
   layer_destroy(clock_layer);
+  gbitmap_destroy(texture);
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits changed) {
@@ -243,7 +245,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits changed) {
 
 static void app_connection_handler(bool connected) {
   if (! connected) {
-      static const uint32_t const segments[] = { 1000, 900, 250 };
+      static const uint32_t const segments[] = { 1000, 100, 900, 100, 250 };
       VibePattern pat = {
         .durations = segments,
         .num_segments = ARRAY_LENGTH(segments),
