@@ -305,6 +305,7 @@ void handle_init(void) {
 
 void handle_deinit(void) {
   window_destroy(my_window);
+  app_message_deregister_callbacks();
   connection_service_unsubscribe();
   tick_timer_service_unsubscribe();
 }
