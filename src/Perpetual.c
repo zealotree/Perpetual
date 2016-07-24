@@ -224,9 +224,11 @@ static void draw_clock(Layer *layer, GContext *ctx) {
   graphics_context_set_stroke_width(ctx, 6);
   graphics_context_set_stroke_color(ctx, theme.MinuteHandColor);
   graphics_draw_line(ctx, center, minute_hand);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Draw min");
 
   graphics_context_set_stroke_color(ctx, theme.HourHandColor);
   graphics_draw_line(ctx, center, hour_hand);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Draw hour");
 
   
   // Draw Center Circle Dot
@@ -399,10 +401,13 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
 
 }
 
+static void tick_handler(struct tm *tick_time, TimeUnits changed) {
+  layer_mark_dirty(date_dots);
+  layer_mark_dirty(clock_layer);
+}
+
 static void main_window_load() {
   window_set_background_color(my_window, theme.BackgroundColor);
-  app_message_register_inbox_received(inbox_received_handler);
-  app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
 
   Layer *window_layer = window_get_root_layer(my_window);
   GRect bounds = layer_get_bounds(window_layer);
@@ -413,10 +418,14 @@ static void main_window_load() {
   layer_set_update_proc(date_dots, draw_date_dots);
   layer_set_update_proc(clock_layer, draw_clock);
 
+  time_t temp = time(NULL);
+  struct tm *tick_time = localtime(&temp);
+  tick_handler(tick_time, MINUTE_UNIT);
+
   layer_add_child(window_get_root_layer(my_window), date_dots);
   layer_add_child(window_get_root_layer(my_window), clock_layer);
-  layer_mark_dirty(date_dots);
-  layer_mark_dirty(clock_layer);
+  //layer_mark_dirty(date_dots);
+  //layer_mark_dirty(clock_layer);
 }
 
 static void main_window_unload() {
@@ -425,10 +434,6 @@ static void main_window_unload() {
   gbitmap_destroy(texture);
 }
 
-static void tick_handler(struct tm *tick_time, TimeUnits changed) {
-  layer_mark_dirty(date_dots);
-  layer_mark_dirty(clock_layer);
-}
 
 static void app_connection_handler(bool connected) {
   if (! connected) {
@@ -441,6 +446,23 @@ static void app_connection_handler(bool connected) {
   }
 }
 
+static void app_focus_changing(bool focusing) {
+    if (focusing) {
+      Layer *window_layer = window_get_root_layer(my_window);
+      layer_set_hidden(window_layer, true);
+    }
+}
+
+static void app_focus_changed(bool focused) {
+    if (focused) {
+      Layer *window_layer = window_get_root_layer(my_window);
+      layer_set_hidden(window_layer, false);  
+      layer_mark_dirty(window_layer);
+      layer_mark_dirty(clock_layer);
+      layer_mark_dirty(date_dots);
+    }
+}
+
 void handle_init(void) {
   load_settings();
   my_window = window_create();
@@ -451,8 +473,18 @@ void handle_init(void) {
   connection_service_subscribe((ConnectionHandlers) {
     .pebble_app_connection_handler = app_connection_handler,
   });
-  tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
+  
+  // Focus
+  app_focus_service_subscribe_handlers((AppFocusHandlers){
+    .did_focus = app_focus_changed,
+    .will_focus = app_focus_changing
+  });
+  
+  
   window_stack_push(my_window, true);
+  tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
+  app_message_register_inbox_received(inbox_received_handler);
+  app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
 }
 
 void handle_deinit(void) {
