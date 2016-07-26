@@ -4,10 +4,19 @@ static Layer *date_dots;
 static Layer *clock_layer;
 static GBitmap *texture;
 
+// Persistent Keys
+#define SHOW_TEXTURE 222 // Use texture
+#define SHOW_DAY_OF_WEEK 223 // Show Day of Week
+#define THEME 224 // This is the custom theme
+#define ACTIVE_THEME 225 // This is the selected theme
+
+
 typedef struct {
   int hours;
   int minutes;
 } Time;    
+
+
 
 typedef struct {
   GColor BackgroundColor;
@@ -26,9 +35,11 @@ typedef struct {
   GColor CenterDotColor;
 } Theme;
 
-Theme theme;
+Theme theme; // the colour theme for our pallete
 
-static void load_default_theme() {
+// Our themes
+
+static void light_theme() { // Perpetual: Default
   theme.BackgroundColor = GColorDarkGray;
   theme.DateDotColor = GColorBlack;
   theme.CurrentDateDotColor = GColorChromeYellow;
@@ -42,14 +53,35 @@ static void load_default_theme() {
   theme.MinuteHandColor = GColorWhite;
   theme.MonthDotColor = GColorChromeYellow;
   theme.CenterKnobColor = GColorWhite;
-  theme.CenterDotColor = GColorLightGray;
+  theme.CenterDotColor = GColorLightGray; 
 }
 
-// Persistent
-#define SHOW_TEXTURE 222 // Use texture
-#define SHOW_DAY_OF_WEEK 223 // Show Day of Week
-#define THEME 224 
+static void darker_theme() {
+  theme.BackgroundColor = GColorBlack;
+  theme.DateDotColor = GColorDarkGray;
+  theme.CurrentDateDotColor = GColorChromeYellow;
+  theme.AMDotColor = GColorWhite;
+  theme.PMDotColor = GColorChromeYellow;
+  theme.MarkerColor = GColorLiberty;
+  theme.RingColor = GColorLiberty;
+  theme.WeekDayColor = GColorDarkGray;
+  theme.CurrentWeekDayColor = GColorChromeYellow;
+  theme.HourHandColor = GColorChromeYellow;
+  theme.MinuteHandColor = GColorWhite;
+  theme.MonthDotColor = GColorChromeYellow;
+  theme.CenterKnobColor = GColorWhite;
+  theme.CenterDotColor = GColorDarkGray;
+}
 
+static void load_custom_theme() {
+  // Custom theme
+  if (persist_exists(THEME)) {
+    persist_read_data(THEME, &theme, sizeof(theme));
+  } else {
+    light_theme();
+  }
+
+}
 
   
 // Layout boundaries
@@ -86,6 +118,27 @@ static int32_t get_angle_for_day(int day) {
   return (day * 360) / 30;
 }
 
+static void load_active_theme() {
+  // based on the selected theme load on
+  // the default returned 
+
+  static char active_theme_buffer[125];
+
+  // load the selected theme
+  if (persist_exists(ACTIVE_THEME)) {
+      persist_read_string(ACTIVE_THEME, active_theme_buffer, sizeof(active_theme_buffer)); 
+      if (! strcmp(active_theme_buffer, "custom")) {
+        load_custom_theme();
+      } else if (! strcmp(active_theme_buffer, "dark")) {
+        darker_theme();
+      } else if (! strcmp(active_theme_buffer, "perpetual")) {
+        light_theme();
+      } 
+  } else {
+    light_theme(); // Default
+  }
+}
+
 
 static void update_display() {
   layer_mark_dirty(clock_layer);
@@ -93,13 +146,13 @@ static void update_display() {
 }
 
 static void load_settings() {
-  load_default_theme();
-  persist_read_data(THEME, &theme, sizeof(theme));
+  load_active_theme();
 }
 
-static void save_settings() {
+static void save_settings() { // save custom theme
   APP_LOG(APP_LOG_LEVEL_DEBUG, "Saving settings");
-  persist_write_data(THEME, &theme, sizeof(theme));
+  persist_write_data(THEME, &theme, sizeof(theme)); // this is custom theme
+  load_active_theme();
   update_display();
 }
 
@@ -224,11 +277,9 @@ static void draw_clock(Layer *layer, GContext *ctx) {
   graphics_context_set_stroke_width(ctx, 6);
   graphics_context_set_stroke_color(ctx, theme.MinuteHandColor);
   graphics_draw_line(ctx, center, minute_hand);
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Draw min");
 
   graphics_context_set_stroke_color(ctx, theme.HourHandColor);
   graphics_draw_line(ctx, center, hour_hand);
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Draw hour");
 
   
   // Draw Center Circle Dot
@@ -309,6 +360,8 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   if (sd_t) {
     persist_write_int(SHOW_DAY_OF_WEEK, sd_t->value->int32 == 1);
   }
+
+  /********** Process the custom color scheme *********/
 
   // Background Color
   Tuple *bg_color_t = dict_find(iter, MESSAGE_KEY_BackgroundColor);
@@ -395,7 +448,15 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
     theme.CenterKnobColor = GColorFromHEX(ck_color_t->value->int32);
   }
 
-
+  // Theme Selection
+  Tuple *ts_t = dict_find(iter, MESSAGE_KEY_SelectedTheme);
+  if (ts_t) {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Selected theme recieved");
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Theme Recieved: %s", 
+        ts_t->value->cstring);
+    persist_write_string(ACTIVE_THEME, ts_t->value->cstring);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Active theme stored");
+  }
 
   save_settings();
 

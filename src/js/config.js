@@ -20,6 +20,26 @@ module.exports = [
     "defaultValue": "Colors"
     },
     {
+      "type": "select",
+      "messageKey": "SelectedTheme",
+      "defaultValue": "perpetual",
+      "label": "Theme",
+      "options": [
+        { 
+          "label": "Perpetual", 
+          "value": "perpetual" 
+        },
+        { 
+          "label": "Perpetual Dark",
+          "value": "dark" 
+        },
+        { 
+          "label": "Custom Theme",
+          "value": "custom" 
+        }
+      ]
+    },
+    {
       "type": "color",
       "messageKey": "BackgroundColor",
       "defaultValue": "0x555555",
