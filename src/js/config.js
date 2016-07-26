@@ -40,6 +40,10 @@ module.exports = [
       ]
     },
     {
+    "type": "heading",
+    "defaultValue": "Custom Theme"
+    },
+    {
       "type": "color",
       "messageKey": "BackgroundColor",
       "defaultValue": "0x555555",
