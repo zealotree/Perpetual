@@ -9,7 +9,7 @@ static GBitmap *texture;
 #define SHOW_DAY_OF_WEEK 223 // Show Day of Week
 #define THEME 224 // This is the custom theme
 #define ACTIVE_THEME 225 // This is the selected theme
-
+#define VIBRATE_DC 226 // BT
 
 typedef struct {
   int hours;
@@ -73,6 +73,92 @@ static void darker_theme() {
   theme.CenterDotColor = GColorDarkGray;
 }
 
+static void dark_node_pro() {
+  theme.BackgroundColor = GColorBlack;
+  theme.DateDotColor = GColorBlack;
+  theme.CurrentDateDotColor = GColorOrange;
+  theme.AMDotColor = GColorWhite;
+  theme.PMDotColor = GColorBlack;
+  theme.MarkerColor = GColorWhite;
+  theme.RingColor = GColorBlack;
+  theme.WeekDayColor = GColorBlack;
+  theme.CurrentWeekDayColor = GColorOrange;
+  theme.HourHandColor = GColorWhite;
+  theme.MinuteHandColor = GColorWhite;
+  theme.MonthDotColor = GColorOrange;
+  theme.CenterKnobColor = GColorWhite;
+  theme.CenterDotColor = GColorBlack;
+}
+
+static void light_node_pro() {
+  theme.BackgroundColor = GColorWhite;
+  theme.DateDotColor = GColorWhite;
+  theme.CurrentDateDotColor = GColorRed;
+  theme.AMDotColor = GColorWhite;
+  theme.PMDotColor = GColorBlack;
+  theme.MarkerColor = GColorBlack;
+  theme.RingColor = GColorWhite;
+  theme.WeekDayColor = GColorWhite;
+  theme.CurrentWeekDayColor = GColorRed;
+  theme.HourHandColor = GColorBlack;
+  theme.MinuteHandColor = GColorBlack;
+  theme.MonthDotColor = GColorRed;
+  theme.CenterKnobColor = GColorBlack;
+  theme.CenterDotColor = GColorWhite;
+}
+
+static void space_age() {
+  theme.BackgroundColor = GColorMediumSpringGreen;
+  theme.DateDotColor = GColorBlack;
+  theme.CurrentDateDotColor = GColorRed;
+  theme.AMDotColor = GColorWhite;
+  theme.PMDotColor = GColorBlack;
+  theme.MarkerColor = GColorWhite;
+  theme.RingColor = GColorWhite;
+  theme.WeekDayColor = GColorBlack;
+  theme.CurrentWeekDayColor = GColorRed;
+  theme.HourHandColor = GColorRed;
+  theme.MinuteHandColor = GColorBlack;
+  theme.MonthDotColor = GColorRed;
+  theme.CenterKnobColor = GColorWhite;
+  theme.CenterDotColor = GColorBlack;
+}
+
+static void perpetual_red() {
+  theme.BackgroundColor = GColorDarkGray;
+  theme.DateDotColor = GColorBlack;
+  theme.CurrentDateDotColor = GColorRed;
+  theme.AMDotColor = GColorWhite;
+  theme.PMDotColor = GColorBlack;
+  theme.MarkerColor = GColorLightGray;
+  theme.RingColor = GColorLightGray;
+  theme.WeekDayColor = GColorBlack;
+  theme.CurrentWeekDayColor = GColorRed;
+  theme.HourHandColor = GColorRed;
+  theme.MinuteHandColor = GColorBlack;
+  theme.MonthDotColor = GColorRed;
+  theme.CenterKnobColor = GColorWhite;
+  theme.CenterDotColor = GColorDarkGray;
+}
+
+static void solarized_sailor() {
+  theme.BackgroundColor = GColorCobaltBlue;
+  theme.DateDotColor = GColorPictonBlue;
+  theme.CurrentDateDotColor = GColorRajah;
+  theme.AMDotColor = GColorWhite;
+  theme.PMDotColor = GColorRajah;
+  theme.MarkerColor = GColorLightGray;
+  theme.RingColor = GColorLightGray;
+  theme.WeekDayColor = GColorTiffanyBlue;
+  theme.CurrentWeekDayColor = GColorRajah;
+  theme.HourHandColor = GColorWhite;
+  theme.MinuteHandColor = GColorWhite;
+  theme.MonthDotColor = GColorRajah;
+  theme.CenterKnobColor = GColorWhite;
+  theme.CenterDotColor = GColorBlack;
+}
+
+
 static void load_custom_theme() {
   // Custom theme
   if (persist_exists(THEME)) {
@@ -80,7 +166,6 @@ static void load_custom_theme() {
   } else {
     light_theme();
   }
-
 }
 
   
@@ -133,6 +218,16 @@ static void load_active_theme() {
         darker_theme();
       } else if (! strcmp(active_theme_buffer, "perpetual")) {
         light_theme();
+      } else if (! strcmp(active_theme_buffer, "perpetual-red")) {
+        perpetual_red();
+      } else if (! strcmp(active_theme_buffer, "dark-node-pro")) {
+        dark_node_pro();
+      } else if (! strcmp(active_theme_buffer, "light-node-pro")) {
+        light_node_pro();
+      } else if (! strcmp(active_theme_buffer, "solarized-sailor")) {
+        solarized_sailor();
+      } else if (! strcmp(active_theme_buffer, "space-age")) {
+        space_age();
       } 
   } else {
     light_theme(); // Default
@@ -361,6 +456,12 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
     persist_write_int(SHOW_DAY_OF_WEEK, sd_t->value->int32 == 1);
   }
 
+  // BT Preference
+  Tuple *bt_t = dict_find(iter, MESSAGE_KEY_Vibrate_DC);
+  if (bt_t) {
+    persist_write_int(VIBRATE_DC, bt_t->value->int32 == 1);
+  }
+
   /********** Process the custom color scheme *********/
 
   // Background Color
@@ -497,7 +598,7 @@ static void main_window_unload() {
 
 
 static void app_connection_handler(bool connected) {
-  if (! connected) {
+  if (! connected && persist_read_bool(VIBRATE_DC)) {
       static const uint32_t const segments[] = { 1000, 100, 900, 100, 250 };
       VibePattern pat = {
         .durations = segments,

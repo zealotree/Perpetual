@@ -12,6 +12,12 @@ module.exports = [
   "defaultValue": false,
 },
 {
+  "type": "toggle",
+  "messageKey": "Vibrate_DC",
+  "label": "Vibrate on Bluetooth Disconnect",
+  "defaultValue": true,
+},
+{
   "type": "section",
   "capabilities": ["COLOR"],
   "items": [
@@ -32,6 +38,26 @@ module.exports = [
         { 
           "label": "Perpetual Dark",
           "value": "dark" 
+        },
+        { 
+          "label": "Perpetual Red",
+          "value": "perpetual-red" 
+        },
+        { 
+          "label": "Dark Node Pro",
+          "value": "dark-node-pro" 
+        },
+        { 
+          "label": "Light Node Pro",
+          "value": "light-node-pro" 
+        },
+        { 
+          "label": "Solarized Sailor",
+          "value": "solarized-sailor" 
+        },
+        { 
+          "label": "Space Age",
+          "value": "space-age" 
         },
         { 
           "label": "Custom Theme",

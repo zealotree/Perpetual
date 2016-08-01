@@ -38,7 +38,8 @@
       "MonthDotColor",
       "CenterDotColor",
       "CenterKnobColor",
-      "SelectedTheme"
+      "SelectedTheme",
+      "Vibrate_DC"
     ],
     "resources": {
       "media": [
