@@ -194,11 +194,6 @@ static int32_t get_angle_for_hour(int hour) {
   return (hour * 360) / 12;
 }
 
-static int32_t get_angle_for_minute(int min) {
-  // Progress through 60 minutes, out of 360 degrees
-  return (min * 360) / 60;
-}
-
 static int32_t get_angle_for_day(int day) {
   return (day * 360) / 30;
 }
