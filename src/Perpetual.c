@@ -559,8 +559,15 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits changed) {
-  layer_mark_dirty(date_dots);
-  layer_mark_dirty(clock_layer);
+
+  if (DAY_UNIT & changed) {
+    layer_mark_dirty(date_dots);
+  }
+
+  if (MINUTE_UNIT & changed) {
+    layer_mark_dirty(clock_layer);
+  }
+
 }
 
 static void main_window_load() {
@@ -577,7 +584,7 @@ static void main_window_load() {
 
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
-  tick_handler(tick_time, MINUTE_UNIT);
+  tick_handler(tick_time, MINUTE_UNIT | DAY_UNIT);
 
   layer_add_child(window_get_root_layer(my_window), date_dots);
   layer_add_child(window_get_root_layer(my_window), clock_layer);

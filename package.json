@@ -1,7 +1,7 @@
 {
   "name": "Perpetual",
   "author": "Zealotree",
-  "version": "1.9.0",
+  "version": "2.0.0",
   "keywords": [
     "pebble-app"
   ],
@@ -11,7 +11,7 @@
   },
   "pebble": {
     "displayName": "Perpetual",
-    "uuid": "a4f71746-d772-4946-94d6-19adecd43a7b",
+    "uuid": "48e3dd66-1f18-4a63-8957-8b21a9d8d86d",
     "sdkVersion": "3",
     "enableMultiJS": true,
     "targetPlatforms": [
